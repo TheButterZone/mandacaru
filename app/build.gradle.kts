@@ -6,7 +6,7 @@ val localProperties = Properties().apply {
     if (file.exists()) load(file.inputStream())
 }
 
-val appVersionName = "0.13.0"
+val appVersionName = "0.13.1"
 
 plugins {
     alias(libs.plugins.android.application)
@@ -22,7 +22,7 @@ android {
         applicationId = "com.github.jvsena42.mandacaru"
         minSdk = 29
         targetSdk = 36
-        versionCode = 30
+        versionCode = 31
         versionName = appVersionName
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
@@ -133,10 +133,10 @@ dependencies {
     implementation(libs.koin.viewmodel)
     implementation(libs.koin.compose)
     implementation(libs.koin.android)
-    implementation(libs.koin.test)
     implementation(libs.androidx.compose.material.icons.extended)
 
     testImplementation(libs.junit)
+    testImplementation(libs.koin.test)
     testImplementation(libs.org.json)
     testImplementation(libs.kotlinx.coroutines.test)
     testImplementation(libs.mockito.core)
