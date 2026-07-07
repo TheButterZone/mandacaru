@@ -211,6 +211,7 @@ class SettingsViewModel(
             SettingsAction.ToggleDataUsageExpanded -> toggleDataUsageExpanded()
             is SettingsAction.OnToggleMobileData -> handleMobileDataToggled(action)
             is SettingsAction.OnToggleAdvancedFeatures -> handleAdvancedFeaturesToggled(action)
+            is SettingsAction.OnFlorestaDirectorySelected -> handleFlorestaDirectorySelected(action)
             SettingsAction.ToggleDeveloperToolsExpanded -> _uiState.update {
                 it.copy(isDeveloperToolsExpanded = !it.isDeveloperToolsExpanded)
             }
@@ -233,6 +234,17 @@ class SettingsViewModel(
                     isDeveloperToolsExpanded = action.enabled && it.isDeveloperToolsExpanded,
                 )
             }
+        }
+    }
+
+    private fun handleFlorestaDirectorySelected(
+        action: SettingsAction.OnFlorestaDirectorySelected
+    ) {
+        viewModelScope.launch(Dispatchers.IO) {
+            preferencesDataSource.setString(
+                PreferenceKeys.FLORESTA_DIRECTORY,
+                action.path
+            )
         }
     }
 
