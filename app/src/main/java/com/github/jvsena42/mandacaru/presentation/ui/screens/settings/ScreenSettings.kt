@@ -158,12 +158,7 @@ fun ScreenSettings(
         onAction = viewModel::onAction,
         modifier = modifier,
         bottomContentPadding = bottomContentPadding,
-        eventFlow = viewModel.eventFlow,
-        onRestartApplication = currentRestartApplication,
-        onOpenLogs = currentOnOpenLogs,
         context = context,
-        uriHandler = uriHandler,
-        shareLogsTitle = shareLogsTitle,
     )
 }
 
@@ -172,21 +167,13 @@ fun ScreenSettings(
 private fun ScreenSettings(
     uiState: SettingsUiState,
     onAction: (SettingsAction) -> Unit,
+    context: Context,
     modifier: Modifier = Modifier,
     bottomContentPadding: Dp = 0.dp,
-    eventFlow: Flow<SettingsEvents>,
-    onRestartApplication: () -> Unit,
-    onOpenLogs: () -> Unit,
-    context: Context,
-    uriHandler: UriHandler,
-    shareLogsTitle: String,
 ) {
     val snackBarHostState = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
     val currentOnAction by rememberUpdatedState(onAction)
-
-    val currentOnRestartApplication by rememberUpdatedState(onRestartApplication)
-    val currentOnOpenLogs by rememberUpdatedState(onOpenLogs)
 
     val directoryPickerLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.OpenDocumentTree()
