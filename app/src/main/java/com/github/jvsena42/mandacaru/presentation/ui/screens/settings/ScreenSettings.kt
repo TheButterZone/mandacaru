@@ -125,7 +125,6 @@ fun ScreenSettings(
 ) {
     val uiState by viewModel.uiState.collectAsState()
     val context = LocalContext.current
-    val contentResolver = context.contentResolver
     val currentRestartApplication by rememberUpdatedState(restartApplication)
     val currentOnOpenLogs by rememberUpdatedState(onOpenLogs)
     val uriHandler = LocalUriHandler.current
@@ -167,6 +166,7 @@ private fun ScreenSettings(
     modifier: Modifier = Modifier,
     bottomContentPadding: Dp = 0.dp,
 ) {
+    val context = LocalContext.current
     val snackBarHostState = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
     val currentOnAction by rememberUpdatedState(onAction)
