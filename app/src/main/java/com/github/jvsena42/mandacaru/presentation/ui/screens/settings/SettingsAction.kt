@@ -34,6 +34,7 @@ sealed interface SettingsAction {
     data class OnToggleMobileData(val enabled: Boolean): SettingsAction
     data class OnToggleAdvancedFeatures(val enabled: Boolean): SettingsAction
     data class OnFlorestaDirectorySelected(val path: String): SettingsAction
+    object OnClickChooseMandacaruDirectory: SettingsAction
     object ToggleDeveloperToolsExpanded: SettingsAction
     object OnClickViewLogs: SettingsAction
 }
