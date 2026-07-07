@@ -123,46 +123,23 @@ fun ScreenSettings(
     onOpenLogs: () -> Unit = {},
     viewModel: SettingsViewModel = koinViewModel(),
 ) {
-    ScreenSettings(
-        uiState = viewModel.uiState.collectAsState().value,
-        onAction = viewModel::onAction,
-        context = LocalContext.current,
-        eventFlow = viewModel.eventFlow,
-        onRestartApplication = restartApplication,
-        onOpenLogs = onOpenLogs,
-        uriHandler = LocalUriHandler.current,
-        shareLogsTitle = stringResource(R.string.share_logs),
-        modifier = modifier,
-        bottomContentPadding = bottomContentPadding,
-    )
-}
+    val uiState by viewModel.uiState.collectAsState()
+    val context = LocalContext.current
+    val uriHandler = LocalUriHandler.current
+    val shareLogsTitle = stringResource(R.string.share_logs)
 
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-private fun ScreenSettings(
-    uiState: SettingsUiState,
-    onAction: (SettingsAction) -> Unit,
-    context: Context,
-    eventFlow: Flow<SettingsEvents>,
-    onRestartApplication: () -> Unit,
-    onOpenLogs: () -> Unit,
-    uriHandler: UriHandler,
-    shareLogsTitle: String,
-    modifier: Modifier = Modifier,
-    bottomContentPadding: Dp = 0.dp,
-) {
     val snackBarHostState = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
-    val currentOnAction by rememberUpdatedState(onAction)
-    val currentOnRestartApplication by rememberUpdatedState(onRestartApplication)
+    val currentOnAction by rememberUpdatedState(viewModel::onAction)
+    val currentRestartApplication by rememberUpdatedState(restartApplication)
     val currentOnOpenLogs by rememberUpdatedState(onOpenLogs)
 
-    LaunchedEffect(eventFlow) {
-        eventFlow.collect { event ->
+    LaunchedEffect(viewModel.eventFlow) {
+        viewModel.eventFlow.collect { event ->
             when (event) {
-                is SettingsEvents.OnNetworkChanged -> currentOnRestartApplication()
-                is SettingsEvents.OnNetworkPolicyChanged -> currentOnRestartApplication()
-                is SettingsEvents.OnBirthdayChanged -> currentOnRestartApplication()
+                is SettingsEvents.OnNetworkChanged -> currentRestartApplication()
+                is SettingsEvents.OnNetworkPolicyChanged -> currentRestartApplication()
+                is SettingsEvents.OnBirthdayChanged -> currentRestartApplication()
                 is SettingsEvents.OnExportLogs -> {
                     val shareIntent = Intent(Intent.ACTION_SEND).apply {
                         type = "text/plain"
