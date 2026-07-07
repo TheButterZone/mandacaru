@@ -1,8 +1,5 @@
 package com.github.jvsena42.mandacaru.presentation.ui.screens.settings
 
-import android.net.Uri
-import androidx.activity.compose.rememberLauncherForActivityResult
-import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.material.icons.outlined.Folder
 import android.content.Intent
 import androidx.compose.animation.AnimatedVisibility
@@ -170,25 +167,8 @@ private fun ScreenSettings(
     val snackBarHostState = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
     val currentOnAction by rememberUpdatedState(onAction)
+    var showStorageDialog by remember { mutableStateOf(false) }
     
-    val directoryPickerLauncher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.OpenDocumentTree()
-    ) { uri: Uri? ->
-        uri?.let {
-            context.contentResolver.takePersistableUriPermission(
-                it,
-                Intent.FLAG_GRANT_READ_URI_PERMISSION or
-                    Intent.FLAG_GRANT_WRITE_URI_PERMISSION
-            )
-    
-            currentOnAction(
-                SettingsAction.OnFlorestaDirectorySelected(
-                    it.toString()
-                )
-            )
-        }
-    }
-
     LaunchedEffect(uiState.snackBarMessage) {
         if (uiState.snackBarMessage.isNotEmpty()) {
             scope.launch {
@@ -952,10 +932,10 @@ private fun ScreenSettings(
                                 Spacer(modifier = Modifier.height(8.dp))
 
                                 FilledTonalButton(
-                                    onClick = { directoryPickerLauncher.launch(null) },
+                                    onClick = { showStorageDialog = true },
                                     modifier = Modifier
                                         .fillMaxWidth()
-                                        .testTag("button_choose_mandacaru_directory"),
+                                        .testTag("button_choose_storage_location"),
                                     shape = RoundedCornerShape(12.dp),
                                 ) {
                                     Icon(
@@ -964,7 +944,7 @@ private fun ScreenSettings(
                                         modifier = Modifier.size(18.dp),
                                     )
                                     Spacer(modifier = Modifier.size(8.dp))
-                                    Text("Choose Mandacaru data directory")
+                                    Text("Choose storage location")
                                 }
                             }
                         }
@@ -972,6 +952,65 @@ private fun ScreenSettings(
                 }
             }
         }
+        if (showStorageDialog) {
+            val externalDirs = context.getExternalFilesDirs(null)
+            val sdCardDir = externalDirs.drop(1).firstOrNull()
+
+            AlertDialog(
+                onDismissRequest = { showStorageDialog = false },
+                title = {
+                    Text("Storage location")
+                },
+                text = {
+            Column {
+                Button(
+                    onClick = {
+                        currentOnAction(
+                            SettingsAction.OnFlorestaDirectorySelected("")
+                        )
+                        showStorageDialog = false
+                    },
+                    modifier = Modifier.fillMaxWidth(),
+                ) {
+                    Text("Internal storage")
+                }
+
+                Spacer(modifier = Modifier.height(8.dp))
+
+                FilledTonalButton(
+                    onClick = {
+                        sdCardDir?.let {
+                            currentOnAction(
+                                SettingsAction.OnFlorestaDirectorySelected(
+                                    it.absolutePath
+                                )
+                            )
+                        }
+                        showStorageDialog = false
+                    },
+                    enabled = sdCardDir != null,
+                    modifier = Modifier.fillMaxWidth(),
+                ) {
+                    Text(
+                        if (sdCardDir != null) {
+                            "SD card"
+                        } else {
+                            "SD card unavailable"
+                        }
+                    )
+                }
+            }
+        },
+        confirmButton = {},
+        dismissButton = {
+            TextButton(
+                onClick = { showStorageDialog = false }
+            ) {
+                Text("Cancel")
+            }
+        },
+    )
+}
         if (uiState.isBirthdayPickerOpen) {
             BirthdayYearPickerDialog(
                 initialYear = uiState.walletBirthdayYear,
