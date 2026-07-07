@@ -124,12 +124,9 @@ fun ScreenSettings(
     viewModel: SettingsViewModel = koinViewModel(),
 ) {
     val uiState by viewModel.uiState.collectAsState()
+    val context = LocalContext.current
     val currentRestartApplication by rememberUpdatedState(restartApplication)
     val currentOnOpenLogs by rememberUpdatedState(onOpenLogs)
-    val context = LocalContext.current
-    val contentResolver = context.contentResolver
-    val uriHandler = LocalUriHandler.current
-    val shareLogsTitle = stringResource(R.string.share_logs)
 
     LaunchedEffect(viewModel.eventFlow) {
         viewModel.eventFlow.collect { event ->
@@ -144,10 +141,15 @@ fun ScreenSettings(
                         addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
                     }
                     context.startActivity(
-                        Intent.createChooser(shareIntent, shareLogsTitle)
+                        Intent.createChooser(
+                            shareIntent,
+                            context.getString(R.string.share_logs)
+                        )
                     )
                 }
-                is SettingsEvents.OpenReleasePage -> uriHandler.openUri(event.url)
+                is SettingsEvents.OpenReleasePage -> {
+                    LocalUriHandler.current.openUri(event.url)
+                }
                 is SettingsEvents.OpenDeveloperLogs -> currentOnOpenLogs()
             }
         }
@@ -156,9 +158,9 @@ fun ScreenSettings(
     ScreenSettings(
         uiState = uiState,
         onAction = viewModel::onAction,
+        context = context,
         modifier = modifier,
         bottomContentPadding = bottomContentPadding,
-        context = context,
     )
 }
 
