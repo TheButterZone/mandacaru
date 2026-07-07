@@ -77,6 +77,9 @@ jobs:
 
   build-apk:
     name: Build debug APK
+    needs:
+      - static-checks
+      - unit-tests
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
