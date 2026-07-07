@@ -123,22 +123,15 @@ fun ScreenSettings(
     onOpenLogs: () -> Unit = {},
     viewModel: SettingsViewModel = koinViewModel(),
 ) {
-    val uiState by viewModel.uiState.collectAsState()
-    val context = LocalContext.current
-    val currentRestartApplication by rememberUpdatedState(restartApplication)
-    val currentOnOpenLogs by rememberUpdatedState(onOpenLogs)
-    val uriHandler = LocalUriHandler.current
-    val shareLogsTitle = stringResource(R.string.share_logs)
-
     ScreenSettings(
-        uiState = uiState,
+        uiState = viewModel.uiState.collectAsState().value,
         onAction = viewModel::onAction,
-        context = context,
+        context = LocalContext.current,
         eventFlow = viewModel.eventFlow,
-        onRestartApplication = currentRestartApplication,
-        onOpenLogs = currentOnOpenLogs,
-        uriHandler = uriHandler,
-        shareLogsTitle = shareLogsTitle,
+        onRestartApplication = restartApplication,
+        onOpenLogs = onOpenLogs,
+        uriHandler = LocalUriHandler.current,
+        shareLogsTitle = stringResource(R.string.share_logs),
         modifier = modifier,
         bottomContentPadding = bottomContentPadding,
     )
