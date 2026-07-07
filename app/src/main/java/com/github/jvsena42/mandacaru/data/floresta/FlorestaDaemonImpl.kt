@@ -54,7 +54,13 @@ class FlorestaDaemonImpl(
                 builtinSnapshotJson != null -> "builtin"
                 else -> "floresta-default"
             }
-            val effectiveDataDir = dataDirFor(network)
+            val effectiveDataDir = dataDirFor(
+                network,
+                preferencesDataSource.getString(
+                    PreferenceKeys.FLORESTA_DIRECTORY,
+                    ""
+                ).takeIf { it.isNotBlank() }
+            )
             val rpcPort = rpcPortFor(network)
             val assumeUtreexoValue = startupSnapshotJson?.let { toAssumeUtreexoValue(it) }
             Log.i(
@@ -168,9 +174,18 @@ class FlorestaDaemonImpl(
     // Each network needs its own chain data. Mainnet keeps the flat base dir for
     // backward compatibility with already-synced installs; other networks live in a
     // dedicated subdir so they never collide with mainnet (or each other).
-    private fun dataDirFor(network: FlorestaNetwork): String {
-        if (network == FlorestaNetwork.BITCOIN) return datadir
-        val dir = File(datadir, network.dirName())
+    private fun dataDirFor(
+        network: FlorestaNetwork,
+        selectedDir: String?
+    ): String {
+        val baseDir = selectedDir?.let { File(it) } ?: File(datadir)
+    
+        if (network == FlorestaNetwork.BITCOIN) {
+            if (!baseDir.exists()) baseDir.mkdirs()
+            return baseDir.absolutePath
+        }
+    
+        val dir = File(baseDir, network.dirName())
         if (!dir.exists()) dir.mkdirs()
         return dir.absolutePath
     }
