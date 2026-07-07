@@ -158,6 +158,12 @@ fun ScreenSettings(
         onAction = viewModel::onAction,
         modifier = modifier,
         bottomContentPadding = bottomContentPadding,
+        eventFlow = viewModel.eventFlow,
+        onRestartApplication = currentRestartApplication,
+        onOpenLogs = currentOnOpenLogs,
+        context = context,
+        uriHandler = uriHandler,
+        shareLogsTitle = shareLogsTitle,
     )
 }
 
@@ -168,11 +174,39 @@ private fun ScreenSettings(
     onAction: (SettingsAction) -> Unit,
     modifier: Modifier = Modifier,
     bottomContentPadding: Dp = 0.dp,
+    eventFlow: Flow<SettingsEvents>,
+    onRestartApplication: () -> Unit,
+    onOpenLogs: () -> Unit,
+    context: Context,
+    uriHandler: UriHandler,
+    shareLogsTitle: String,
 ) {
+    LaunchedEffect(eventFlow) {
+        eventFlow.collect { event ->
+            when (event) {
+                is SettingsEvents.OnNetworkChanged -> onRestartApplication()
+                is SettingsEvents.OnNetworkPolicyChanged -> onRestartApplication()
+                is SettingsEvents.OnBirthdayChanged -> onRestartApplication()
+                is SettingsEvents.OnExportLogs -> {
+                    val shareIntent = Intent(Intent.ACTION_SEND).apply {
+                        type = "text/plain"
+                        putExtra(Intent.EXTRA_STREAM, event.uri)
+                        addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                    }
+                    context.startActivity(
+                        Intent.createChooser(shareIntent, shareLogsTitle)
+                    )
+                }
+                is SettingsEvents.OpenReleasePage -> uriHandler.openUri(event.url)
+                is SettingsEvents.OpenDeveloperLogs -> onOpenLogs()
+            }
+        }
+    }
+
     val snackBarHostState = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
     val currentOnAction by rememberUpdatedState(onAction)
-    
+
     val directoryPickerLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.OpenDocumentTree()
     ) { uri: Uri? ->
@@ -181,7 +215,7 @@ private fun ScreenSettings(
                 uri,
                 Intent.FLAG_GRANT_READ_URI_PERMISSION or
                     Intent.FLAG_GRANT_WRITE_URI_PERMISSION
-        )
+            )
             currentOnAction(
                 SettingsAction.OnFlorestaDirectorySelected(uri.toString())
             )
