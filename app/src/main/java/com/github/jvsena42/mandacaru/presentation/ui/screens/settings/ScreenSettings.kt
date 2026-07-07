@@ -127,38 +127,18 @@ fun ScreenSettings(
     val context = LocalContext.current
     val currentRestartApplication by rememberUpdatedState(restartApplication)
     val currentOnOpenLogs by rememberUpdatedState(onOpenLogs)
-
-    LaunchedEffect(viewModel.eventFlow) {
-        viewModel.eventFlow.collect { event ->
-            when (event) {
-                is SettingsEvents.OnNetworkChanged -> currentRestartApplication()
-                is SettingsEvents.OnNetworkPolicyChanged -> currentRestartApplication()
-                is SettingsEvents.OnBirthdayChanged -> currentRestartApplication()
-                is SettingsEvents.OnExportLogs -> {
-                    val shareIntent = Intent(Intent.ACTION_SEND).apply {
-                        type = "text/plain"
-                        putExtra(Intent.EXTRA_STREAM, event.uri)
-                        addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
-                    }
-                    context.startActivity(
-                        Intent.createChooser(
-                            shareIntent,
-                            context.getString(R.string.share_logs)
-                        )
-                    )
-                }
-                is SettingsEvents.OpenReleasePage -> {
-                    LocalUriHandler.current.openUri(event.url)
-                }
-                is SettingsEvents.OpenDeveloperLogs -> currentOnOpenLogs()
-            }
-        }
-    }
+    val uriHandler = LocalUriHandler.current
+    val shareLogsTitle = stringResource(R.string.share_logs)
 
     ScreenSettings(
         uiState = uiState,
         onAction = viewModel::onAction,
         context = context,
+        eventFlow = viewModel.eventFlow,
+        onRestartApplication = currentRestartApplication,
+        onOpenLogs = currentOnOpenLogs,
+        uriHandler = uriHandler,
+        shareLogsTitle = shareLogsTitle,
         modifier = modifier,
         bottomContentPadding = bottomContentPadding,
     )
@@ -170,12 +150,41 @@ private fun ScreenSettings(
     uiState: SettingsUiState,
     onAction: (SettingsAction) -> Unit,
     context: Context,
+    eventFlow: Flow<SettingsEvents>,
+    onRestartApplication: () -> Unit,
+    onOpenLogs: () -> Unit,
+    uriHandler: UriHandler,
+    shareLogsTitle: String,
     modifier: Modifier = Modifier,
     bottomContentPadding: Dp = 0.dp,
 ) {
     val snackBarHostState = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
     val currentOnAction by rememberUpdatedState(onAction)
+    val currentOnRestartApplication by rememberUpdatedState(onRestartApplication)
+    val currentOnOpenLogs by rememberUpdatedState(onOpenLogs)
+
+    LaunchedEffect(eventFlow) {
+        eventFlow.collect { event ->
+            when (event) {
+                is SettingsEvents.OnNetworkChanged -> currentOnRestartApplication()
+                is SettingsEvents.OnNetworkPolicyChanged -> currentOnRestartApplication()
+                is SettingsEvents.OnBirthdayChanged -> currentOnRestartApplication()
+                is SettingsEvents.OnExportLogs -> {
+                    val shareIntent = Intent(Intent.ACTION_SEND).apply {
+                        type = "text/plain"
+                        putExtra(Intent.EXTRA_STREAM, event.uri)
+                        addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                    }
+                    context.startActivity(
+                        Intent.createChooser(shareIntent, shareLogsTitle)
+                    )
+                }
+                is SettingsEvents.OpenReleasePage -> uriHandler.openUri(event.url)
+                is SettingsEvents.OpenDeveloperLogs -> currentOnOpenLogs()
+            }
+        }
+    }
 
     val directoryPickerLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.OpenDocumentTree()
