@@ -1,5 +1,9 @@
 package com.github.jvsena42.mandacaru.presentation.ui.screens.settings
 
+import android.net.Uri
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.material.icons.outlined.Folder
 import android.content.Intent
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.Spring
@@ -123,6 +127,7 @@ fun ScreenSettings(
     val currentRestartApplication by rememberUpdatedState(restartApplication)
     val currentOnOpenLogs by rememberUpdatedState(onOpenLogs)
     val context = LocalContext.current
+    val contentResolver = context.contentResolver
     val uriHandler = LocalUriHandler.current
     val shareLogsTitle = stringResource(R.string.share_logs)
     ScreenSettings(
@@ -165,6 +170,24 @@ private fun ScreenSettings(
     val snackBarHostState = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
     val currentOnAction by rememberUpdatedState(onAction)
+    
+    val directoryPickerLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.OpenDocumentTree()
+    ) { uri: Uri? ->
+        uri?.let {
+            contentResolver.takePersistableUriPermission(
+                it,
+                Intent.FLAG_GRANT_READ_URI_PERMISSION or
+                    Intent.FLAG_GRANT_WRITE_URI_PERMISSION
+            )
+    
+            currentOnAction(
+                SettingsAction.OnFlorestaDirectorySelected(
+                    it.toString()
+                )
+            )
+        }
+    }
 
     LaunchedEffect(uiState.snackBarMessage) {
         if (uiState.snackBarMessage.isNotEmpty()) {
@@ -925,12 +948,29 @@ private fun ScreenSettings(
                                     Spacer(modifier = Modifier.size(8.dp))
                                     Text(stringResource(R.string.export_logs))
                                 }
+
+                                Spacer(modifier = Modifier.height(8.dp))
+
+                                FilledTonalButton(
+                                    onClick = { directoryPickerLauncher.launch(null) },
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .testTag("button_choose_mandacaru_directory"),
+                                    shape = RoundedCornerShape(12.dp),
+                                ) {
+                                    Icon(
+                                        Icons.Outlined.Folder,
+                                        contentDescription = null,
+                                        modifier = Modifier.size(18.dp),
+                                    )
+                                    Spacer(modifier = Modifier.size(8.dp))
+                                    Text("Choose Mandacaru data directory")
+                                }
                             }
                         }
                     }
                 }
             }
-        }
 
         if (uiState.isBirthdayPickerOpen) {
             BirthdayYearPickerDialog(
