@@ -930,7 +930,7 @@ private fun ScreenSettings(
                                     Spacer(modifier = Modifier.size(8.dp))
                                     Text(stringResource(R.string.view_logs))
                                 }
-                            }
+                            
                                 Spacer(modifier = Modifier.height(8.dp))
 
                                 FilledTonalButton(
