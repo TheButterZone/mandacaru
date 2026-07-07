@@ -127,13 +127,43 @@ fun ScreenSettings(
     val context = LocalContext.current
     val uriHandler = LocalUriHandler.current
     val shareLogsTitle = stringResource(R.string.share_logs)
-
-    val snackBarHostState = remember { SnackbarHostState() }
-    val scope = rememberCoroutineScope()
-    val currentOnAction by rememberUpdatedState(viewModel::onAction)
     val currentRestartApplication by rememberUpdatedState(restartApplication)
     val currentOnOpenLogs by rememberUpdatedState(onOpenLogs)
-    
+
+    ScreenSettings(
+        uiState = uiState,
+        onAction = viewModel::onAction,
+        context = context,
+        eventFlow = viewModel.eventFlow,
+        onRestartApplication = currentRestartApplication,
+        onOpenLogs = currentOnOpenLogs,
+        uriHandler = uriHandler,
+        shareLogsTitle = shareLogsTitle,
+        modifier = modifier,
+        bottomContentPadding = bottomContentPadding,
+    )
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun ScreenSettings(
+    uiState: SettingsUiState,
+    onAction: (SettingsAction) -> Unit,
+    context: Context,
+    eventFlow: Flow<SettingsEvents>,
+    onRestartApplication: () -> Unit,
+    onOpenLogs: () -> Unit,
+    uriHandler: UriHandler,
+    shareLogsTitle: String,
+    modifier: Modifier = Modifier,
+    bottomContentPadding: Dp = 0.dp,
+) {
+    val snackBarHostState = remember { SnackbarHostState() }
+    val scope = rememberCoroutineScope()
+    val currentOnAction by rememberUpdatedState(onAction)
+    val currentOnRestartApplication by rememberUpdatedState(onRestartApplication)
+    val currentOnOpenLogs by rememberUpdatedState(onOpenLogs)
+
     val directoryPickerLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.OpenDocumentTree()
     ) { uri: Uri? ->
@@ -157,40 +187,40 @@ fun ScreenSettings(
             }
         }
     }
-Scaffold(
-    modifier = modifier,
-    snackbarHost = {
-        SnackbarHost(
-            hostState = snackBarHostState,
-            modifier = Modifier.padding(bottom = bottomContentPadding),
-        )
-    },
-    contentWindowInsets = WindowInsets(0),
-) { contentPadding ->
 
-    LaunchedEffect(viewModel.eventFlow) {
-        viewModel.eventFlow.collect { event ->
-            when (event) {
-                is SettingsEvents.OnNetworkChanged -> currentRestartApplication()
-                is SettingsEvents.OnNetworkPolicyChanged -> currentRestartApplication()
-                is SettingsEvents.OnBirthdayChanged -> currentRestartApplication()
-                is SettingsEvents.OnExportLogs -> {
-                    val shareIntent = Intent(Intent.ACTION_SEND).apply {
-                        type = "text/plain"
-                        putExtra(Intent.EXTRA_STREAM, event.uri)
-                        addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+    Scaffold(
+        modifier = modifier,
+        snackbarHost = {
+            SnackbarHost(
+                hostState = snackBarHostState,
+                modifier = Modifier.padding(bottom = bottomContentPadding),
+            )
+        },
+        contentWindowInsets = WindowInsets(0),
+    ) { contentPadding ->
+
+        LaunchedEffect(eventFlow) {
+            eventFlow.collect { event ->
+                when (event) {
+                    is SettingsEvents.OnNetworkChanged -> currentOnRestartApplication()
+                    is SettingsEvents.OnNetworkPolicyChanged -> currentOnRestartApplication()
+                    is SettingsEvents.OnBirthdayChanged -> currentOnRestartApplication()
+                    is SettingsEvents.OnExportLogs -> {
+                        val shareIntent = Intent(Intent.ACTION_SEND).apply {
+                            type = "text/plain"
+                            putExtra(Intent.EXTRA_STREAM, event.uri)
+                            addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                        }
+                        context.startActivity(
+                            Intent.createChooser(shareIntent, shareLogsTitle)
+                        )
                     }
-                    context.startActivity(
-                        Intent.createChooser(shareIntent, shareLogsTitle)
-                    )
+                    is SettingsEvents.OpenReleasePage -> uriHandler.openUri(event.url)
+                    is SettingsEvents.OpenDeveloperLogs -> currentOnOpenLogs()
                 }
-                is SettingsEvents.OpenReleasePage -> uriHandler.openUri(event.url)
-                is SettingsEvents.OpenDeveloperLogs -> currentOnOpenLogs()
             }
         }
-    }
 
-    val layout = rememberAdaptiveLayout()
         val layout = rememberAdaptiveLayout()
         val isExpandedWidth = layout.isExpandedWidth
         val horizontalPadding = layout.horizontalPadding
