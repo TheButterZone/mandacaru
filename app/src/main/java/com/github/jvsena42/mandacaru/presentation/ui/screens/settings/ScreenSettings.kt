@@ -124,10 +124,10 @@ fun ScreenSettings(
     viewModel: SettingsViewModel = koinViewModel(),
 ) {
     val uiState by viewModel.uiState.collectAsState()
-    val currentRestartApplication by rememberUpdatedState(restartApplication)
-    val currentOnOpenLogs by rememberUpdatedState(onOpenLogs)
     val context = LocalContext.current
     val contentResolver = context.contentResolver
+    val currentRestartApplication by rememberUpdatedState(restartApplication)
+    val currentOnOpenLogs by rememberUpdatedState(onOpenLogs)
     val uriHandler = LocalUriHandler.current
     val shareLogsTitle = stringResource(R.string.share_logs)
     ScreenSettings(
@@ -175,7 +175,7 @@ private fun ScreenSettings(
         contract = ActivityResultContracts.OpenDocumentTree()
     ) { uri: Uri? ->
         uri?.let {
-            contentResolver.takePersistableUriPermission(
+            context.contentResolver.takePersistableUriPermission(
                 it,
                 Intent.FLAG_GRANT_READ_URI_PERMISSION or
                     Intent.FLAG_GRANT_WRITE_URI_PERMISSION
