@@ -127,6 +127,7 @@ fun ScreenSettings(
     val context = LocalContext.current
     val uriHandler = LocalUriHandler.current
     val shareLogsTitle = stringResource(R.string.share_logs)
+
     val currentRestartApplication by rememberUpdatedState(restartApplication)
     val currentOnOpenLogs by rememberUpdatedState(onOpenLogs)
 
@@ -179,15 +180,6 @@ private fun ScreenSettings(
         }
     }
 
-    LaunchedEffect(uiState.snackBarMessage) {
-        if (uiState.snackBarMessage.isNotEmpty()) {
-            scope.launch {
-                snackBarHostState.showSnackbar(message = uiState.snackBarMessage)
-                currentOnAction(SettingsAction.ClearSnackBarMessage)
-            }
-        }
-    }
-
     Scaffold(
         modifier = modifier,
         snackbarHost = {
@@ -198,6 +190,15 @@ private fun ScreenSettings(
         },
         contentWindowInsets = WindowInsets(0),
     ) { contentPadding ->
+
+        LaunchedEffect(uiState.snackBarMessage) {
+            if (uiState.snackBarMessage.isNotEmpty()) {
+                scope.launch {
+                    snackBarHostState.showSnackbar(message = uiState.snackBarMessage)
+                    currentOnAction(SettingsAction.ClearSnackBarMessage)
+                }
+            }
+        }
 
         LaunchedEffect(eventFlow) {
             eventFlow.collect { event ->
