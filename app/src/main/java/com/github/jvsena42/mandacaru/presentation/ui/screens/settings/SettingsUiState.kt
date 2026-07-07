@@ -43,5 +43,6 @@ data class SettingsUiState(
     val useAlsoMobileData: Boolean = false,
     val isDataUsageExpanded: Boolean = false,
     val enableAdvancedFeatures: Boolean = false,
+    val florestaDirectory: String = "",
     val isDeveloperToolsExpanded: Boolean = false,
 )
