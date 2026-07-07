@@ -181,31 +181,12 @@ private fun ScreenSettings(
     uriHandler: UriHandler,
     shareLogsTitle: String,
 ) {
-    LaunchedEffect(eventFlow) {
-        eventFlow.collect { event ->
-            when (event) {
-                is SettingsEvents.OnNetworkChanged -> onRestartApplication()
-                is SettingsEvents.OnNetworkPolicyChanged -> onRestartApplication()
-                is SettingsEvents.OnBirthdayChanged -> onRestartApplication()
-                is SettingsEvents.OnExportLogs -> {
-                    val shareIntent = Intent(Intent.ACTION_SEND).apply {
-                        type = "text/plain"
-                        putExtra(Intent.EXTRA_STREAM, event.uri)
-                        addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
-                    }
-                    context.startActivity(
-                        Intent.createChooser(shareIntent, shareLogsTitle)
-                    )
-                }
-                is SettingsEvents.OpenReleasePage -> uriHandler.openUri(event.url)
-                is SettingsEvents.OpenDeveloperLogs -> onOpenLogs()
-            }
-        }
-    }
-
     val snackBarHostState = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
     val currentOnAction by rememberUpdatedState(onAction)
+
+    val currentOnRestartApplication by rememberUpdatedState(onRestartApplication)
+    val currentOnOpenLogs by rememberUpdatedState(onOpenLogs)
 
     val directoryPickerLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.OpenDocumentTree()
