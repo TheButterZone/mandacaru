@@ -124,7 +124,15 @@ class FlorestaDaemonImpl(
             PreferenceKeys.CURRENT_NETWORK,
             FlorestaNetwork.BITCOIN.name
         ).toFlorestaNetwork()
-        val base = File(dataDirFor(network))
+        val base = File(
+            dataDirFor(
+                network,
+                preferencesDataSource.getString(
+                    PreferenceKeys.FLORESTA_DIRECTORY,
+                    ""
+                ).takeIf { it.isNotBlank() }
+            )
+        )
         listOf("chaindata", "cfilters").forEach { sub ->
             val dir = File(base, sub)
             val size = if (dir.exists()) dirSize(dir) else 0L
