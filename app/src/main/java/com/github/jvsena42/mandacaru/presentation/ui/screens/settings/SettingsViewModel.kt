@@ -63,6 +63,8 @@ class SettingsViewModel(
                 .getBoolean(PreferenceKeys.USE_ALSO_MOBILE_DATA, false)
             val enableAdvancedFeatures = preferencesDataSource
                 .getBoolean(PreferenceKeys.ENABLE_ADVANCED_FEATURES, false)
+            val florestaDirectory = preferencesDataSource
+                .getString(PreferenceKeys.FLORESTA_DIRECTORY, "")
             _uiState.update {
                 it.copy(
                     selectedNetwork = preferencesDataSource.getString(
@@ -72,6 +74,7 @@ class SettingsViewModel(
                     walletBirthdayYear = birthdayYear,
                     useAlsoMobileData = useAlsoMobileData,
                     enableAdvancedFeatures = enableAdvancedFeatures,
+                    florestaDirectory = florestaDirectory,
                 )
             }
             updateElectrumAddress()
