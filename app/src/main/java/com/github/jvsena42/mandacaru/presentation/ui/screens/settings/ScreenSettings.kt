@@ -124,25 +124,39 @@ fun ScreenSettings(
     viewModel: SettingsViewModel = koinViewModel(),
 ) {
     val uiState by viewModel.uiState.collectAsState()
-    val context = LocalContext.current
-    val uriHandler = LocalUriHandler.current
-    val shareLogsTitle = stringResource(R.string.share_logs)
-
     val currentRestartApplication by rememberUpdatedState(restartApplication)
     val currentOnOpenLogs by rememberUpdatedState(onOpenLogs)
-
+    val context = LocalContext.current
+    val contentResolver = context.contentResolver
+    val uriHandler = LocalUriHandler.current
+    val shareLogsTitle = stringResource(R.string.share_logs)
     ScreenSettings(
         uiState = uiState,
         onAction = viewModel::onAction,
-        context = context,
-        eventFlow = viewModel.eventFlow,
-        onRestartApplication = currentRestartApplication,
-        onOpenLogs = currentOnOpenLogs,
-        uriHandler = uriHandler,
-        shareLogsTitle = shareLogsTitle,
         modifier = modifier,
         bottomContentPadding = bottomContentPadding,
     )
+    LaunchedEffect(viewModel.eventFlow) {
+        viewModel.eventFlow.collect { event ->
+            when (event) {
+                is SettingsEvents.OnNetworkChanged -> currentRestartApplication()
+                is SettingsEvents.OnNetworkPolicyChanged -> currentRestartApplication()
+                is SettingsEvents.OnBirthdayChanged -> currentRestartApplication()
+                is SettingsEvents.OnExportLogs -> {
+                    val shareIntent = Intent(Intent.ACTION_SEND).apply {
+                        type = "text/plain"
+                        putExtra(Intent.EXTRA_STREAM, event.uri)
+                        addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                    }
+                    context.startActivity(
+                        Intent.createChooser(shareIntent, shareLogsTitle)
+                    )
+                }
+                is SettingsEvents.OpenReleasePage -> uriHandler.openUri(event.url)
+                is SettingsEvents.OpenDeveloperLogs -> currentOnOpenLogs()
+            }
+        }
+    }
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -150,33 +164,37 @@ fun ScreenSettings(
 private fun ScreenSettings(
     uiState: SettingsUiState,
     onAction: (SettingsAction) -> Unit,
-    context: Context,
-    eventFlow: Flow<SettingsEvents>,
-    onRestartApplication: () -> Unit,
-    onOpenLogs: () -> Unit,
-    uriHandler: UriHandler,
-    shareLogsTitle: String,
     modifier: Modifier = Modifier,
     bottomContentPadding: Dp = 0.dp,
 ) {
     val snackBarHostState = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
     val currentOnAction by rememberUpdatedState(onAction)
-    val currentOnRestartApplication by rememberUpdatedState(onRestartApplication)
-    val currentOnOpenLogs by rememberUpdatedState(onOpenLogs)
-
+    
     val directoryPickerLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.OpenDocumentTree()
     ) { uri: Uri? ->
-        if (uri != null) {
-            context.contentResolver.takePersistableUriPermission(
-                uri,
+        uri?.let {
+            contentResolver.takePersistableUriPermission(
+                it,
                 Intent.FLAG_GRANT_READ_URI_PERMISSION or
                     Intent.FLAG_GRANT_WRITE_URI_PERMISSION
             )
+    
             currentOnAction(
-                SettingsAction.OnFlorestaDirectorySelected(uri.toString())
+                SettingsAction.OnFlorestaDirectorySelected(
+                    it.toString()
+                )
             )
+        }
+    }
+
+    LaunchedEffect(uiState.snackBarMessage) {
+        if (uiState.snackBarMessage.isNotEmpty()) {
+            scope.launch {
+                snackBarHostState.showSnackbar(message = uiState.snackBarMessage)
+                currentOnAction(SettingsAction.ClearSnackBarMessage)
+            }
         }
     }
 
@@ -190,38 +208,6 @@ private fun ScreenSettings(
         },
         contentWindowInsets = WindowInsets(0),
     ) { contentPadding ->
-
-        LaunchedEffect(uiState.snackBarMessage) {
-            if (uiState.snackBarMessage.isNotEmpty()) {
-                scope.launch {
-                    snackBarHostState.showSnackbar(message = uiState.snackBarMessage)
-                    currentOnAction(SettingsAction.ClearSnackBarMessage)
-                }
-            }
-        }
-
-        LaunchedEffect(eventFlow) {
-            eventFlow.collect { event ->
-                when (event) {
-                    is SettingsEvents.OnNetworkChanged -> currentOnRestartApplication()
-                    is SettingsEvents.OnNetworkPolicyChanged -> currentOnRestartApplication()
-                    is SettingsEvents.OnBirthdayChanged -> currentOnRestartApplication()
-                    is SettingsEvents.OnExportLogs -> {
-                        val shareIntent = Intent(Intent.ACTION_SEND).apply {
-                            type = "text/plain"
-                            putExtra(Intent.EXTRA_STREAM, event.uri)
-                            addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
-                        }
-                        context.startActivity(
-                            Intent.createChooser(shareIntent, shareLogsTitle)
-                        )
-                    }
-                    is SettingsEvents.OpenReleasePage -> uriHandler.openUri(event.url)
-                    is SettingsEvents.OpenDeveloperLogs -> currentOnOpenLogs()
-                }
-            }
-        }
-
         val layout = rememberAdaptiveLayout()
         val isExpandedWidth = layout.isExpandedWidth
         val horizontalPadding = layout.horizontalPadding
@@ -944,7 +930,7 @@ private fun ScreenSettings(
                                     Spacer(modifier = Modifier.size(8.dp))
                                     Text(stringResource(R.string.view_logs))
                                 }
-
+                            }
                                 Spacer(modifier = Modifier.height(8.dp))
 
                                 FilledTonalButton(
@@ -985,7 +971,7 @@ private fun ScreenSettings(
                     }
                 }
             }
-
+        }
         if (uiState.isBirthdayPickerOpen) {
             BirthdayYearPickerDialog(
                 initialYear = uiState.walletBirthdayYear,
