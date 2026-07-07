@@ -133,29 +133,7 @@ fun ScreenSettings(
     val currentOnAction by rememberUpdatedState(viewModel::onAction)
     val currentRestartApplication by rememberUpdatedState(restartApplication)
     val currentOnOpenLogs by rememberUpdatedState(onOpenLogs)
-
-    LaunchedEffect(viewModel.eventFlow) {
-        viewModel.eventFlow.collect { event ->
-            when (event) {
-                is SettingsEvents.OnNetworkChanged -> currentRestartApplication()
-                is SettingsEvents.OnNetworkPolicyChanged -> currentRestartApplication()
-                is SettingsEvents.OnBirthdayChanged -> currentRestartApplication()
-                is SettingsEvents.OnExportLogs -> {
-                    val shareIntent = Intent(Intent.ACTION_SEND).apply {
-                        type = "text/plain"
-                        putExtra(Intent.EXTRA_STREAM, event.uri)
-                        addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
-                    }
-                    context.startActivity(
-                        Intent.createChooser(shareIntent, shareLogsTitle)
-                    )
-                }
-                is SettingsEvents.OpenReleasePage -> uriHandler.openUri(event.url)
-                is SettingsEvents.OpenDeveloperLogs -> currentOnOpenLogs()
-            }
-        }
-    }
-
+    
     val directoryPickerLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.OpenDocumentTree()
     ) { uri: Uri? ->
@@ -179,17 +157,40 @@ fun ScreenSettings(
             }
         }
     }
+Scaffold(
+    modifier = modifier,
+    snackbarHost = {
+        SnackbarHost(
+            hostState = snackBarHostState,
+            modifier = Modifier.padding(bottom = bottomContentPadding),
+        )
+    },
+    contentWindowInsets = WindowInsets(0),
+) { contentPadding ->
 
-    Scaffold(
-        modifier = modifier,
-        snackbarHost = {
-            SnackbarHost(
-                hostState = snackBarHostState,
-                modifier = Modifier.padding(bottom = bottomContentPadding),
-            )
-        },
-        contentWindowInsets = WindowInsets(0),
-    ) { contentPadding ->
+    LaunchedEffect(viewModel.eventFlow) {
+        viewModel.eventFlow.collect { event ->
+            when (event) {
+                is SettingsEvents.OnNetworkChanged -> currentRestartApplication()
+                is SettingsEvents.OnNetworkPolicyChanged -> currentRestartApplication()
+                is SettingsEvents.OnBirthdayChanged -> currentRestartApplication()
+                is SettingsEvents.OnExportLogs -> {
+                    val shareIntent = Intent(Intent.ACTION_SEND).apply {
+                        type = "text/plain"
+                        putExtra(Intent.EXTRA_STREAM, event.uri)
+                        addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                    }
+                    context.startActivity(
+                        Intent.createChooser(shareIntent, shareLogsTitle)
+                    )
+                }
+                is SettingsEvents.OpenReleasePage -> uriHandler.openUri(event.url)
+                is SettingsEvents.OpenDeveloperLogs -> currentOnOpenLogs()
+            }
+        }
+    }
+
+    val layout = rememberAdaptiveLayout()
         val layout = rememberAdaptiveLayout()
         val isExpandedWidth = layout.isExpandedWidth
         val horizontalPadding = layout.horizontalPadding
