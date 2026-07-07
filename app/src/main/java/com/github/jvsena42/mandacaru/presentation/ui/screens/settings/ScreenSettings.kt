@@ -174,17 +174,14 @@ private fun ScreenSettings(
     val directoryPickerLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.OpenDocumentTree()
     ) { uri: Uri? ->
-        uri?.let {
+        if (uri != null) {
             context.contentResolver.takePersistableUriPermission(
-                it,
+                uri,
                 Intent.FLAG_GRANT_READ_URI_PERMISSION or
                     Intent.FLAG_GRANT_WRITE_URI_PERMISSION
-            )
-    
+        )
             currentOnAction(
-                SettingsAction.OnFlorestaDirectorySelected(
-                    it.toString()
-                )
+                SettingsAction.OnFlorestaDirectorySelected(uri.toString())
             )
         }
     }
