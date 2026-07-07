@@ -1,10 +1,5 @@
 package com.github.jvsena42.mandacaru.presentation.ui.screens.settings
 
-enum class FlorestaStorageLocation {
-    INTERNAL,
-    EXTERNAL,
-}
-
 sealed interface SettingsAction {
     data class OnDescriptorChanged(val descriptor: String) : SettingsAction
     data class OnNodeAddressChanged(val address: String) : SettingsAction
@@ -46,9 +41,7 @@ sealed interface SettingsAction {
 
     data class OnToggleAdvancedFeatures(val enabled: Boolean) : SettingsAction
 
-    data class OnStorageLocationSelected(
-        val location: FlorestaStorageLocation
-    ) : SettingsAction
+    data class OnFlorestaDirectorySelected(val path: String) : SettingsAction
 
     object ToggleDeveloperToolsExpanded : SettingsAction
     object OnClickViewLogs : SettingsAction
