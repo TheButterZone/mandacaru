@@ -245,6 +245,12 @@ class SettingsViewModel(
                 PreferenceKeys.FLORESTA_DIRECTORY,
                 action.path
             )
+    
+            _uiState.update {
+                it.copy(
+                    florestaDirectory = action.path
+                )
+            }
         }
     }
 
