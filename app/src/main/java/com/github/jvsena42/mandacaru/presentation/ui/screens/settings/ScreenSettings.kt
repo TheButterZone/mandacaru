@@ -130,12 +130,7 @@ fun ScreenSettings(
     val contentResolver = context.contentResolver
     val uriHandler = LocalUriHandler.current
     val shareLogsTitle = stringResource(R.string.share_logs)
-    ScreenSettings(
-        uiState = uiState,
-        onAction = viewModel::onAction,
-        modifier = modifier,
-        bottomContentPadding = bottomContentPadding,
-    )
+
     LaunchedEffect(viewModel.eventFlow) {
         viewModel.eventFlow.collect { event ->
             when (event) {
@@ -157,6 +152,13 @@ fun ScreenSettings(
             }
         }
     }
+
+    ScreenSettings(
+        uiState = uiState,
+        onAction = viewModel::onAction,
+        modifier = modifier,
+        bottomContentPadding = bottomContentPadding,
+    )
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
