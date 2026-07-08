@@ -251,6 +251,8 @@ class SettingsViewModel(
                     florestaDirectory = action.path
                 )
             }
+
+            viewModelScope.sendEvent(SettingsEvents.OnStorageLocationChanged)
         }
     }
 
