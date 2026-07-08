@@ -138,6 +138,7 @@ fun ScreenSettings(
                 is SettingsEvents.OnNetworkChanged -> currentRestartApplication()
                 is SettingsEvents.OnNetworkPolicyChanged -> currentRestartApplication()
                 is SettingsEvents.OnBirthdayChanged -> currentRestartApplication()
+                is SettingsEvents.OnStorageLocationChanged -> currentRestartApplication()
                 is SettingsEvents.OnExportLogs -> {
                     val shareIntent = Intent(Intent.ACTION_SEND).apply {
                         type = "text/plain"
