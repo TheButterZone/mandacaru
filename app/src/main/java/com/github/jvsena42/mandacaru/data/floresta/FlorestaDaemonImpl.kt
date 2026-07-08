@@ -199,15 +199,59 @@ class FlorestaDaemonImpl(
         network: FlorestaNetwork,
         selectedDir: String?
     ): String {
-        val baseDir = selectedDir?.let { File(it) } ?: File(datadir)
-
+        val usingCustomDir = !selectedDir.isNullOrBlank()
+        val baseDir = if (usingCustomDir) File(selectedDir!!) else File(datadir)
+    
+        Log.i(
+            TAG,
+            buildString {
+                append("dataDirFor: ")
+                append("usingCustomDir=").append(usingCustomDir)
+                append(", selectedDir=").append(selectedDir ?: "<internal>")
+                append(", base=").append(baseDir.absolutePath)
+                append(", exists=").append(baseDir.exists())
+                append(", isDirectory=").append(baseDir.isDirectory)
+                append(", canRead=").append(baseDir.canRead())
+                append(", canWrite=").append(baseDir.canWrite())
+            }
+        )
+    
+        if (!baseDir.exists()) {
+            val created = baseDir.mkdirs()
+            Log.i(
+                TAG,
+                "dataDirFor: mkdirs()=$created existsNow=${baseDir.exists()}"
+            )
+        }
+    
         if (network == FlorestaNetwork.BITCOIN) {
-            if (!baseDir.exists()) baseDir.mkdirs()
+            Log.i(
+                TAG,
+                "dataDirFor: final=${baseDir.absolutePath}"
+            )
             return baseDir.absolutePath
         }
-
+    
         val dir = File(baseDir, network.dirName())
-        if (!dir.exists()) dir.mkdirs()
+    
+        if (!dir.exists()) {
+            val created = dir.mkdirs()
+            Log.i(
+                TAG,
+                "dataDirFor: created network dir ${dir.absolutePath} success=$created"
+            )
+        }
+    
+        Log.i(
+            TAG,
+            buildString {
+                append("dataDirFor: final=").append(dir.absolutePath)
+                append(", exists=").append(dir.exists())
+                append(", canRead=").append(dir.canRead())
+                append(", canWrite=").append(dir.canWrite())
+            }
+        )
+    
         return dir.absolutePath
     }
 
