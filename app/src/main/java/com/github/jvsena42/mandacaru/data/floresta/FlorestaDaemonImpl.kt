@@ -32,11 +32,19 @@ class FlorestaDaemonImpl(
         if (isRunning) return
         runSuspendCatching {
             val config = createConfig()
+            
+            Log.i(TAG, "start: creating Florestad")
             daemon = Florestad.fromConfig(config)
+            
+            Log.i(TAG, "start: Florestad created")
+            
+            Log.i(TAG, "start: calling daemon.start()")
             daemon?.start()
-
-            Log.i(TAG, "start: Floresta running")
+            
+            Log.i(TAG, "start: daemon.start() returned")
+            
             isRunning = true
+            Log.i(TAG, "start: Floresta running")
         }.onFailure { e ->
             Log.e(TAG, "start error: ", e)
             isRunning = false
